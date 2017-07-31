@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -15,18 +16,15 @@ import java.util.UUID;
 
 import space.wolv.r6sdrone.joystick.JoystickView;
 
-public class MainActivity extends Activity implements JoystickView.JoystickListener{
-
+public class MainActivity extends Activity implements JoystickView.JoystickListener
+{
     BluetoothSocket btSocket;
     BluetoothDevice btDevice = null;
 
     public void sendBtMsg(String msg)
     {
-        UUID uuid = UUID.fromString("94f39d29-7d6d-437d-973b-fba39e49d4ee"); // standard SerialPortService ID
-
         try
         {
-            btSocket = btDevice.createRfcommSocketToServiceRecord(uuid);
             if (!btSocket.isConnected())
             {
                 btSocket.connect();
@@ -45,6 +43,7 @@ public class MainActivity extends Activity implements JoystickView.JoystickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
         BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -68,18 +67,36 @@ public class MainActivity extends Activity implements JoystickView.JoystickListe
                 }
             }
         }
+
+        try
+        {
+            UUID uuid = UUID.fromString("94f39d29-7d6d-437d-973b-fba39e49d4ee"); // standard SerialPortService ID
+
+            btSocket = btDevice.createRfcommSocketToServiceRecord(uuid);
+            if (!btSocket.isConnected())
+            {
+                btSocket.connect();
+            }
+        }
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void onJoystickMoved(float xPercent, float yPercent, int id)
     {
+        yPercent *= -1;
+        String droneData = (yPercent > 0) ? "up" : "down";
+
         switch(id)
         {
             case R.id.joystickLeft:
-                sendBtMsg("direction: " + ((xPercent > 0) ? "right" : "left") + "|" + ((yPercent > 0) ? "up" : "down"));
+                sendBtMsg("Left: " + droneData );
                 break;
             case R.id.joystickRight:
-                sendBtMsg("direction: " + ((xPercent > 0) ? "right" : "left") + "|" + ((yPercent > 0) ? "up" : "down"));
+                sendBtMsg("Right: " + droneData);
                 break;
         }
     }
